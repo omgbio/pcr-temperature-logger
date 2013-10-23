@@ -1,0 +1,8 @@
+omgbio PCR multi temperature probe reader
+for Dallas Semiconductor DS18x2x family probes.
+
+This is just some early code that we're using to gather              
+temperature ramp data as we develop prototype PCR machines.
+
+License: GPLv3
+
