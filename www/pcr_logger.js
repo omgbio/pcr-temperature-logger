@@ -12,6 +12,12 @@ var PCRLogger = {
             this.websocket_url = this.build_websocket_url();
 
             this.socket = io.connect(this.websocket_url);
+
+            this.socket.on('welcome', function(data) {
+                console.log('Server says: ' + data.msg);
+                this.socket.emit('get_datapoints', {past: 2});
+            }.bind(this));
+            
             this.socket.on('datapoints', function(data) {
 
                 console.log("Got datapoints: ");

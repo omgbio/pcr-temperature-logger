@@ -14,7 +14,7 @@ var PCRLogger = {
 
     tablename: 'temps',
     buffer: '',
-    websocket: null,
+    sockets: [],
 
     mime_types: {
         "html": "text/html",
@@ -107,12 +107,38 @@ var PCRLogger = {
         callback();
 
         this.io.sockets.on('connection', function(socket) {
-            socket.emit('datapoints', {temperature: 28.0});
-            socket.on('get_datapoints', function(data) {
-                console.log("client asked for datapoints");
+            socket.emit('welcome', {'msg': "Successfully connected"});
+            socket.on('get_datapoints', function() {
+
+                this.get_datapoints(10, function(err, datapoints) {
+                    if(err) {
+                        console.log("Error: failed to get datapoints");
+                        return;
+                    }
+                    socket.emit(datapoints);
+
+                }.bind(this));
             }.bind(this));
         }.bind(this));
     },
+
+    get_datapoints: function(minutes, callback) {
+        minutes = minutes || 10;
+        ms = minutes * 60 * 1000;
+
+        var time = new Date().getTime() - ms;
+
+        this.db.all("SELECT * FROM " + this.tablename + " WHERE time >= ?", [time], function(err, rows) {
+            if(err) {
+                callback(err);
+                return;
+            }
+//            console.log(util.inspect(rows));
+            callback(null, rows);
+
+        }.bind(this));
+    },
+
 
     on_data_received: function(data) {
         this.buffer += data;
@@ -123,14 +149,38 @@ var PCRLogger = {
     },
 
     got_packet: function(packet) {
-        console.log("Got packet: " + packet);
+        var parts;
+        parts = packet.split(':');
+        this.log_packet({
+            type: parts[0],
+            device: parseInt(parts[1]),
+            value: parseFloat(parts[2])
+        });
     },
 
     log_packet: function(packet) {
-        var stmt = this.db.prepare("INSERT INTO ? VALUES (NULL, ?, ?, ?)", this.tablename);
-        // id, device, time, temperature
-        stmt.run();
-        stmt.finalize();
+
+        console.log("Logging: " + util.inspect(packet));
+
+        var time = new Date().getTime();
+
+        // value order: id, device, time, temperature
+        this.db.run("INSERT INTO "+this.tablename+" VALUES (NULL, ?, ?, ?)", 
+                    [packet.device, time, packet.value],
+                    function(err, result) {
+                        if(err) {
+                            console.log("sqlite3 error: " + err);
+                            return;
+                        }
+                        this.broadcast_packet(packet);
+                    }.bind(this));
+    },
+
+    broadcast_packet: function(packet) {
+        var i;
+        for(i=0; i < this.sockets.length; i++) {
+            sockets[i].emit('datapoint', packet);
+        }
     },
 
     print_errors: function(err_data) {
@@ -202,18 +252,6 @@ var PCRLogger = {
             var file_stream = fs.createReadStream(filename);
             file_stream.pipe(res);
         }.bind(this));
-/*
-        fs.readFile(__dirname + '/www/index.html',
-                    function (err, data) {
-                        if (err) {
-                            res.writeHead(500);
-                            return res.end('Error loading index.html');
-                        }
-                        
-                        res.writeHead(200);
-                        res.end(data);
-                    })
-*/
     }
 };
 
