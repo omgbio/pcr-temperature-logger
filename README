@@ -6,3 +6,24 @@ temperature ramp data as we develop prototype PCR machines.
 
 License: GPLv3
 
+= Installation =
+
+Prerequisites for the server side:
+
+  sudo aptitude install build-essential libsqlite3-dev
+
+  npm install
+
+Grant access to the user running the server side js:
+
+  sudo chown <user> <serial_port_device>
+
+E.g:
+
+  sudo chown joe /dev/ttyACM0
+
+
+
+
+
+

@@ -6,6 +6,7 @@
   
   License: GPLv3
 */
+
 #define DEBUG (1)
 
 struct device {

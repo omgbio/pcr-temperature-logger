@@ -1,0 +1,28 @@
+{
+  "name": "pcr-temperature-logger",
+  "version": "0.0.0",
+  "description": "multi-probe DS18x2x temperature logger",
+  "main": "index.js",
+  "dependencies": {
+    "serialport": "~1.2.2",
+    "sqlite3": "~2.1.18",
+    "socket.io": "~0.9.16"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/omgbio/pcr-temperature-logger.git"
+  },
+  "homepage": "https://omgbio.com",
+  "keywords": [
+    "pcr",
+    "bio",
+    "diybio",
+    "temperature"
+  ],
+  "author": {
+    "name": "Marc Juul",
+    "email": "juul@omgbio.com",
+    "url": "http://ven.li"
+  },
+  "license": "GPLv3"
+}
