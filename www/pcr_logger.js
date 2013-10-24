@@ -6,7 +6,11 @@ var PCRLogger = {
     },
 
     instance: function(p) {
-        p = p || {};
+        this.p = p || {
+            container: null,
+            on_packet_received: null,
+            on_packets_received: null
+        };
        
         this.init = function(p) {
             this.websocket_url = this.build_websocket_url();
@@ -14,15 +18,23 @@ var PCRLogger = {
             this.socket = io.connect(this.websocket_url);
 
             this.socket.on('welcome', function(data) {
-                console.log('Server says: ' + data.msg);
                 this.socket.emit('get_datapoints', {past: 2});
             }.bind(this));
             
             this.socket.on('datapoints', function(data) {
+                if(this.p.on_packets_received) {
+                    this.p.on_packets_received(null, data);
+                }                
+            }.bind(this));
 
-                console.log("Got datapoints: ");
-                console.log(data);
+            this.socket.on('datapoint', function(data) {
 
+                console.log("Got datapoint");
+
+                if(this.p.on_packet_received) {
+
+                    this.p.on_packet_received(null, data);
+                }
             }.bind(this));
         };
 

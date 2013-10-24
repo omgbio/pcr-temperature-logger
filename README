@@ -1,8 +1,8 @@
+
 omgbio PCR multi temperature probe reader
 for Dallas Semiconductor DS18x2x family probes.
 
-This is just some early code that we're using to gather              
-temperature ramp data as we develop prototype PCR machines.
+This is the beginnings of the desktop biolab control interface and CAD.
 
 License for Arduino code: GPLv3
 License for Web app: AGPLv3
@@ -11,11 +11,12 @@ License for Web app: AGPLv3
 
 Prerequisites for the server side:
 
-  sudo aptitude install build-essential libsqlite3-dev
-
+  sudo aptitude install nodejs npm build-essential libsqlite3-dev
+  
+  cd pcr-temperature-logger
   npm install
 
-Grant access to the user running the server side js:
+Grant serial port access to the user running the server side js:
 
   sudo chown <user> <serial_port_device>
 
@@ -23,8 +24,17 @@ E.g:
 
   sudo chown joe /dev/ttyACM0
 
+Start the program with e.g:
 
+  ./index.js -D /dev/ttyACM0
 
+Then point your web-browser at:
+
+  http://localhost:8080
+
+If you don't have a PCR device hooked up, then you can tell the program to generate fake data using:
+
+  ./index.js -D fake
 
 
 

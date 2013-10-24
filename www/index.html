@@ -6,12 +6,14 @@
     <!-- js from "external" libraries -->
 
     <script type="text/javascript" src="jquery-2.0.3.js"></script>
+    <script type="text/javascript" src="jquery.flot.js"></script>
 
     <!-- this file is special. it is slyly served up by socket.io -->
     <script type="text/javascript" src="/socket.io/socket.io.js"></script>
 
     <!-- js that is part of this app-->
     <script type="text/javascript" src="pcr_logger.js"></script>
+    <script type="text/javascript" src="time_series.js"></script>
     <script type="text/javascript" src="main.js"></script>
     
     <!-- css that is part of this app -->
@@ -22,8 +24,12 @@
     
     <h1>PCR Temperature logger</h1>
 
-    <div id="#container">
-      <p>Check out <a href='http://www.humblesoftware.com/envision/demos/timeseries'>Envision</a> for html5 time series plots.</p>
+    <div id="container">
+      <p>omgbio.org PCR control interface</p>
     </div>
+
+    <div id="pcr_plot">
+    </div>
+
   </body>
 </html>

@@ -6,7 +6,8 @@
   "dependencies": {
     "serialport": "~1.2.2",
     "sqlite3": "~2.1.18",
-    "socket.io": "~0.9.16"
+    "socket.io": "~0.9.16",
+    "commander": "~2.0.0"
   },
   "repository": {
     "type": "git",
