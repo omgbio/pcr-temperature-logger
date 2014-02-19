@@ -14,7 +14,8 @@ This is the beginnings of the desktop biolab control interface.
 
 # ToDo #
 
-* Adding name and description to data series
+* Switch app to (sequelize)[http://sequelizejs.com/] or leveldb, (shoe)[https://github.com/substack/dnode] and (dnode)[https://github.com/substack/dnode].
+* Add name and description to data series
 * List existing series
 * Select time and temperature range for plot
 * Plot multiple series on same plot
@@ -23,11 +24,13 @@ This is the beginnings of the desktop biolab control interface.
 
 # Installation #
 
-Prerequisites for the server side:
+On Debian/Ubuntu based systems prerequisites can be installed with:
 
 ```
 sudo aptitude install nodejs npm build-essential libsqlite3-dev
 ```
+
+Required node libraries can be installed with:
 
 ```  
 cd pcr-temperature-logger
