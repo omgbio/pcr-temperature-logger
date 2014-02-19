@@ -14,7 +14,7 @@ This is the beginnings of the desktop biolab control interface.
 
 # ToDo #
 
-* Switch app to (sequelize)[http://sequelizejs.com/] or leveldb, (shoe)[https://github.com/substack/dnode] and (dnode)[https://github.com/substack/dnode].
+* Switch app to levelup (possibly (timestreamdb)[https://github.com/brycebaril/timestreamdb]), (shoe)[https://github.com/substack/dnode] and (dnode)[https://github.com/substack/dnode].
 * Add name and description to data series
 * List existing series
 * Select time and temperature range for plot
