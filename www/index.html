@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>OMGBio - PCR Temperature logger</title>
+    <title>PCR Temperature logger</title>
 
     <!-- js from "external" libraries -->
 
@@ -26,13 +26,14 @@
 
     <div id="container">
       <p>Status: <span id="status">App loading</span>.</p>
+      <p>Temperature: <span id="temperature">Not available (begin a series to show)</span></p>
       <p>
         Current series: 
         <input id="series_id" type="text" value="None" /> 
         <button id="fetch_series_btn">Fetch</button>.
       <p>
         <button id="begin_series_btn">
-          Begin new series
+          Record new series
         </button>
       </p>
     </div>

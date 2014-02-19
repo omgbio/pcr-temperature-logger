@@ -11,6 +11,9 @@ $(document).ready(function() {
         on_packet_received: function(err, packet) {
             var datapoint = [packet.time, packet.value];
             console.log("Plotting: " + datapoint);
+            var c = parseFloat(packet.value);
+            var f = c * (9/5) + 32;
+            $('#temperature').html(c.toFixed(2) + " Celsius | " + f.toFixed(2) + " Fahrenheit");
             TimeSeries.update(datapoint);
         },
         on_packets_received: function(err, data) {
