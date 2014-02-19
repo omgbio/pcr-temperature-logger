@@ -2,12 +2,12 @@
 var TimeSeries = {
 
     data: [],
-
-
+    
     create: function(container, data) {
 
-        this.data = data || this.data;
-
+//        this.data = this.parse_datas(data || this.data);
+        this.set_data(data);
+   
 		    this.plot = $.plot(container, this.data, {
 			      series: {
 				        shadowSize: 0	// Drawing is faster without shadows
@@ -17,13 +17,27 @@ var TimeSeries = {
 				        max: 100
 			      },
 			      xaxis: {
-				        show: false
+				        show: true
 			      }
 		    });
     },
 
-    replace: function(data) {
+    set_data: function(data) {
+        if(!data || (data.length <= 0)) {
+            this.data = [];
+            return;
+        }
         this.data = data;
+/*
+        if(!(data instanceof Array)) {
+            data = [data];
+        }
+*/
+    },
+
+    replace: function(data) {
+        this.set_data(data);
+//			  this.plot.setData([this.parse_datas(this.data)]);
 			  this.plot.setData([this.data]);
         this.plot.setupGrid();
 			  this.plot.draw();
@@ -31,16 +45,14 @@ var TimeSeries = {
 
 		update: function(data) {
         this.data.push(data);
+//			  this.plot.setData([this.parse_data(this.data)]);
 			  this.plot.setData([this.data]);
         this.plot.setupGrid();
 			  this.plot.draw();
 		}
-
-
-
 };
 
-
+/*
 function TimeSeries() {
 
 		// We use an inline data source in the example, usually data would
@@ -97,3 +109,4 @@ function TimeSeries() {
 
 		update();
 	}
+*/

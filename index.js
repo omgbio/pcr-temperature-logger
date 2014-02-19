@@ -8,6 +8,8 @@ var socketio = require('socket.io');
 var util = require('util');
 var WebSocket = require('ws');
 var commander = require('commander');
+var uuid = require('uuid').v4;
+var async = require('async');
 var SerialPort = require('serialport').SerialPort;
 var sqlite3 = require('sqlite3').verbose();
 
@@ -25,7 +27,7 @@ commander
 
 var PCRLogger = {
 
-    tablename: 'temps',
+    table_prefix: '', // e.g. 'pcr_'
     buffer: '',
     sockets: [],
 
@@ -106,6 +108,7 @@ var PCRLogger = {
     init_serial: function(callback) {
         
         if(this.args.device == 'fake') {
+            console.log("Using fake data generator instead of serial device");
             // set up fake data generator
             // to be called every second
             this.fake_counter = 0;
@@ -113,6 +116,8 @@ var PCRLogger = {
             callback();
             return;
         };
+
+        console.log("Opening serial port: " + this.args.device);
 
         this.serial = new SerialPort(this.args.device, {
             baudrate: this.args.baudrate
@@ -140,34 +145,88 @@ var PCRLogger = {
 
         this.app = http.createServer(this.http_request_handler.bind(this));
         this.io = socketio.listen(this.app);
-        this.app.listen(this.args.port);
-        // TODO are there callbacks for createServer or listen we can use?
-        callback();
 
         this.io.sockets.on('connection', function(socket) {
             socket.emit('welcome', {'msg': "Successfully connected"});
             this.sockets.push(socket);
-            socket.on('get_datapoints', function() {
-
-                this.get_datapoints(1, function(err, datapoints) {
+            socket.on('get_datapoints', function(data) {
+                if(!data || !data.series_id) {
+                    // TODO report error to browser
+                    console.log("Error: Received request for datapoints with no series_id specified");
+                    return;
+                }
+                this.get_datapoints(data.series_id, function(err, datapoints) {
                     if(err) {
-                        console.log("Error: failed to get datapoints");
+                        // TODO report error to browser
+                        console.log("Error: " + err);
                         return;
                     }
-                    socket.emit('datapoints', datapoints);
+                    // send datapoints to browser
+                    socket.emit('datapoints', {
+                        series_id: data.series_id,
+                        datapoints: datapoints
+                    });
 
                 }.bind(this));
             }.bind(this));
+
+            socket.on('begin_new_series', function() {
+                this.create_series(function(series) {
+                    socket.emit('new_series_begun', series);
+                }.bind(this));
+            }.bind(this));
         }.bind(this));
+
+        console.log("Web server running on: http://localhost:"+this.args.port+"/")
+
+        this.app.listen(this.args.port, function() {
+            callback();
+        });
+
+        this.app.on('error', function(err) {
+            // TODO report to clients
+            console.log("Web server error: " + err);
+        });
     },
 
-    get_datapoints: function(minutes, callback) {
-        minutes = minutes || 1;
-        ms = minutes * 60 * 1000;
+    create_series: function(callback) {
+        var series = {
+            id: null,
+            uuid: uuid(),
+            start_time: new Date().getTime()
+        };
+        
+        var self = this;
+        // value order: id, uuid, time
+        this.db.run("INSERT INTO '"+this.table_prefix+"series' VALUES (NULL, ?, ?)", 
+                    [series.uuid, series.start_time],
+                    function(err) {
+                        if(err) {
+                            // TODO report back to browser
+                            console.log("sqlite3 error: " + err);
+                            return;
+                        }
+                        console.log("============ " + this.lastID);
+                        // 'this' references the finalized statement object
+                        series.id = this.lastID;
+                        self.series = series;
+                        callback(series);
+                    });
+    },
 
-        var time = new Date().getTime() - ms;
+    get_datapoints: function(series_id, callback) {
+//        minutes = minutes || 1;
+//        ms = minutes * 60 * 1000;
+        series_id = series_id || this.series.id;
+        if(!series_id) {
+            callback("Cannot retrieve datapoints for unspecified series");
+            return;
+        }
 
-        this.db.all("SELECT * FROM " + this.tablename + " WHERE time >= ?", [time], function(err, rows) {
+//        var time = new Date().getTime() - ms;
+        var time = 0;
+
+        this.db.all("SELECT * FROM '" + this.table_prefix + "datapoints' WHERE time >= ? AND series_id = ?", [time, series_id], function(err, rows) {
             if(err) {
                 callback(err);
                 return;
@@ -176,7 +235,6 @@ var PCRLogger = {
 
         }.bind(this));
     },
-
 
     on_data_received: function(data) {
         this.buffer += data;
@@ -187,25 +245,39 @@ var PCRLogger = {
     },
 
     got_packet: function(packet) {
-        var parts;
-        parts = packet.split(':');
+        var m = packet.match(/Temp:\s+(\d+\.?\d*)/);
+        if(!m || (m.length < 2)) {
+            console.log("Cannot parse packet: " + packet);
+            return;
+        }
+        this.log_packet({
+            type: 'temperature',
+            device: 0,
+            value: m[1],
+            time: new Date().getTime()
+        });
+/*
         this.log_packet({
             type: parts[0],
             device: parseInt(parts[1]),
             time: new Date().getTime(),
             value: parseFloat(parts[2])
         });
+*/
     },
 
     log_packet: function(packet) {
 
-        console.log("Logging: " + util.inspect(packet));
+        if(!this.series) {
+            console.log("Datapoint: " + util.inspect(packet) + " [not logging]");
+            return;
+        }
+        
+        console.log("Datapoint: " + util.inspect(packet) + " [Logging to series: " + this.series.id + "]");
 
-;
-
-        // value order: id, device, time, value
-        this.db.run("INSERT INTO "+this.tablename+" VALUES (NULL, ?, ?, ?)", 
-                    [packet.device, packet.time, packet.value],
+        // value order: id, series_id, device, time, value
+        this.db.run("INSERT INTO '"+this.table_prefix+"datapoints' VALUES (NULL, ?, ?, ?, ?)", 
+                    [this.series.id, packet.device, packet.time, packet.value],
                     function(err, result) {
                         if(err) {
                             console.log("sqlite3 error: " + err);
@@ -217,7 +289,7 @@ var PCRLogger = {
 
     broadcast_packet: function(packet) {
         var i;
-        console.log("sockets: " + this.sockets.length);
+        console.log("Number of listening websockets: " + this.sockets.length);
         for(i=0; i < this.sockets.length; i++) {
             this.sockets[i].emit('datapoint', packet);
         }
@@ -236,9 +308,8 @@ var PCRLogger = {
     },
 
     create_schema: function(callback) {
-        var tablename = 'temps';
-        // first check if it the table already exists
-        var sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='"+this.tablename+"';"
+        // first check if datapoints table already exists
+        var sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='"+this.table_prefix+"datapoints';"
         this.db.get(sql, {}, function(err, row) {
             if(err) {
                 callback(err);
@@ -250,15 +321,25 @@ var PCRLogger = {
                 return;
             }
 
-            sql = "CREATE TABLE "+this.tablename+"(id INTEGER PRIMARY KEY, device INTEGER, time INTEGER, value REAL);";
-            this.db.run(sql, {}, function(err) {
+            var statements = [
+                "CREATE TABLE '"+this.table_prefix+"series' (id INTEGER PRIMARY KEY, uuid TEXT, start_time INTEGER)",
+                "CREATE TABLE '"+this.table_prefix+"datapoints' (id INTEGER PRIMARY KEY, series_id INTEGER, device INTEGER, time INTEGER, value REAL)"
+            ];
+
+            async.eachSeries(statements, function(statement, complete) {
+                // run for each statement
+                this.db.run(statement, {}, function(err) {
+                    complete(err);
+                }.bind(this));
+            }.bind(this), function(err) {
+                // called when all complete or error occurs
                 if(err) {
                     callback(err);
                     return;
                 }
                 console.log("Database schema created.");
                 callback();
-            }.bind(this));
+            });
         }.bind(this));
     },
 

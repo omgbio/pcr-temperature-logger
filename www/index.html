@@ -22,14 +22,23 @@
   </head>
   <body>
     
-    <h1>PCR Temperature logger</h1>
+    <h1>PCR control panel</h1>
 
     <div id="container">
-      <p>omgbio.org PCR control interface</p>
+      <p>Status: <span id="status">App loading</span>.</p>
+      <p>
+        Current series: 
+        <input id="series_id" type="text" value="None" /> 
+        <button id="fetch_series_btn">Fetch</button>.
+      <p>
+        <button id="begin_series_btn">
+          Begin new series
+        </button>
+      </p>
     </div>
 
     <div id="pcr_plot">
     </div>
-
+                       
   </body>
 </html>

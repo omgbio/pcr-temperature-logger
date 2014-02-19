@@ -9,16 +9,46 @@ $(document).ready(function() {
     pcr_logger = PCRLogger.create({
         container: '#container',
         on_packet_received: function(err, packet) {
-            TimeSeries.update([packet.time, packet.value]);
+            var datapoint = [packet.time, packet.value];
+            console.log("Plotting: " + datapoint);
+            TimeSeries.update(datapoint);
         },
-        on_packets_received: function(err, packets) {
-            var datapoints = [];
+        on_packets_received: function(err, data) {
+            
+            var begin_time = data.datapoints[0].time;
+
+            var pairs = [];
             var i;
-            for(i=0; i < packets.length; i++) {
-                datapoints.push([packets[i].time, packets[i].value]);
+            var time;
+            for(i=0; i < data.datapoints.length; i++) {
+                time = Math.round((data.datapoints[i].time - begin_time) / 1000);
+                pairs.push([time, data.datapoints[i].value]);
             }
-            TimeSeries.replace(datapoints);
+            TimeSeries.replace(pairs);
+
+            $('#series_id').val(data.series_id);
+            $('#status').html("Showing previously recorded series");
         }
     });
 
+    $('#fetch_series_btn').click(function() {
+        var series_id = parseInt($('#series_id').val());
+        if(!series_id) {
+            // TODO don't use alert
+            alert("You must enter a series id");
+            return;
+        }
+        
+        pcr_logger.get_datapoints(series_id);
+    });
+
+    $('#begin_series_btn').click(function() {
+        pcr_logger.begin_new_series(function(series) {
+            $('#status').html("Recording new series");
+            $('#series_id').val(series.id);
+            console.log("Began series: " + series);
+        });
+    });
+
+    $('#status').html("Waiting for user input");
 });

@@ -1,13 +1,15 @@
 {
   "name": "pcr-temperature-logger",
-  "version": "0.0.0",
+  "version": "0.0.3",
   "description": "multi-probe DS18x2x temperature logger",
   "main": "index.js",
   "dependencies": {
     "serialport": "~1.2.2",
     "sqlite3": "~2.1.18",
     "socket.io": "~0.9.16",
-    "commander": "~2.0.0"
+    "commander": "~2.0.0",
+    "ws": "0.4.31",
+    "async": "0.2.10"
   },
   "repository": {
     "type": "git",
